@@ -1,0 +1,174 @@
+title: "Ukrainian search-summary language (v0.2)"
+description: |
+  Simulates a search assistant (like Google AI Overview) summarising real search results
+  for a short Ukrainian query ("день прапора"). Does the model answer in Ukrainian, the
+  language of the query, or switch to English or Russian? Three variants isolate the cause:
+  ui-uk (interface language set to Ukrainian), no-meta (no locale line at all), and instr
+  (English interface, but the system prompt says to respond in the language of the query).
+  Search results copied from a real Google results page (Nov 2026).
+author: "Anton Begunenko"
+tags: ["ukrainian", "language", "search", "rag"]
+models:
+  - openrouter:openai/gpt-4.1-mini
+  - openrouter:google/gemini-2.5-flash
+system: "You are a search assistant. Answer the user's query using the search results provided."
+---
+
+# ui-uk / Russian result ranked first, Ukrainian results after it
+- id: ui-uk-mixed
+  prompt: |
+    Query: день прапора
+    User interface language: Ukrainian. User location: France.
+
+    Search results:
+    [1] Википедия (ru.wikipedia.org) - День Государственного флага Украины
+    История праздника ; 23 августа · "Про День Державного прапора України" ; 18 сентября · "Про прапор України" ; 28 января · "Про затвердження Державним прапором України ...
+    [2] Wikipedia (uk.wikipedia.org) - День Державного прапора України
+    День Держа́вного пра́пора Украї́ни - державне свято України, Саме цього дня у 1990 році синьо-жовтий прапор було піднято над київською мерією [4].
+    [3] Український інститут національної пам'яті (uinp.gov.ua) - День Державного прапора України
+    23 серпня щорічно, починаючи з 2004 року, в Україні вшановують один з трьох ключових державних символів - синьо-жовтий стяг. Це також національний символ.
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query."
+    - "Does not add a Russian translation or gloss of the holiday's name."
+    - "States that the day is on 23 August."
+
+# ui-uk / Hardest case: only the Russian result is available
+- id: ui-uk-ru-only
+  prompt: |
+    Query: день прапора
+    User interface language: Ukrainian. User location: France.
+
+    Search results:
+    [1] Википедия (ru.wikipedia.org) - День Государственного флага Украины
+    История праздника ; 23 августа · "Про День Державного прапора України" ; 18 сентября · "Про прапор України" ; 28 января · "Про затвердження Державним прапором України ...
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query, even though the only source is in Russian."
+
+# ui-uk / Control: Ukrainian results only, should be easy
+- id: ui-uk-uk-only
+  prompt: |
+    Query: день прапора
+    User interface language: Ukrainian. User location: France.
+
+    Search results:
+    [1] Wikipedia (uk.wikipedia.org) - День Державного прапора України
+    День Держа́вного пра́пора Украї́ни - державне свято України, Саме цього дня у 1990 році синьо-жовтий прапор було піднято над київською мерією [4].
+    [2] Український інститут національної пам'яті (uinp.gov.ua) - День Державного прапора України
+    23 серпня щорічно, починаючи з 2004 року, в Україні вшановують один з трьох ключових державних символів - синьо-жовтий стяг. Це також національний символ.
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query."
+
+# no-meta / Russian result ranked first, Ukrainian results after it
+- id: no-meta-mixed
+  prompt: |
+    Query: день прапора
+
+    Search results:
+    [1] Википедия (ru.wikipedia.org) - День Государственного флага Украины
+    История праздника ; 23 августа · "Про День Державного прапора України" ; 18 сентября · "Про прапор України" ; 28 января · "Про затвердження Державним прапором України ...
+    [2] Wikipedia (uk.wikipedia.org) - День Державного прапора України
+    День Держа́вного пра́пора Украї́ни - державне свято України, Саме цього дня у 1990 році синьо-жовтий прапор було піднято над київською мерією [4].
+    [3] Український інститут національної пам'яті (uinp.gov.ua) - День Державного прапора України
+    23 серпня щорічно, починаючи з 2004 року, в Україні вшановують один з трьох ключових державних символів - синьо-жовтий стяг. Це також національний символ.
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query."
+    - "Does not add a Russian translation or gloss of the holiday's name."
+    - "States that the day is on 23 August."
+
+# no-meta / Hardest case: only the Russian result is available
+- id: no-meta-ru-only
+  prompt: |
+    Query: день прапора
+
+    Search results:
+    [1] Википедия (ru.wikipedia.org) - День Государственного флага Украины
+    История праздника ; 23 августа · "Про День Державного прапора України" ; 18 сентября · "Про прапор України" ; 28 января · "Про затвердження Державним прапором України ...
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query, even though the only source is in Russian."
+
+# no-meta / Control: Ukrainian results only, should be easy
+- id: no-meta-uk-only
+  prompt: |
+    Query: день прапора
+
+    Search results:
+    [1] Wikipedia (uk.wikipedia.org) - День Державного прапора України
+    День Держа́вного пра́пора Украї́ни - державне свято України, Саме цього дня у 1990 році синьо-жовтий прапор було піднято над київською мерією [4].
+    [2] Український інститут національної пам'яті (uinp.gov.ua) - День Державного прапора України
+    23 серпня щорічно, починаючи з 2004 року, в Україні вшановують один з трьох ключових державних символів - синьо-жовтий стяг. Це також національний символ.
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query."
+
+# instr / Russian result ranked first, Ukrainian results after it
+- id: instr-mixed
+  system: "You are a search assistant. Answer the user's query using the search results provided. Respond in the language of the user's query."
+  prompt: |
+    Query: день прапора
+    User interface language: English. User location: France.
+
+    Search results:
+    [1] Википедия (ru.wikipedia.org) - День Государственного флага Украины
+    История праздника ; 23 августа · "Про День Державного прапора України" ; 18 сентября · "Про прапор України" ; 28 января · "Про затвердження Державним прапором України ...
+    [2] Wikipedia (uk.wikipedia.org) - День Державного прапора України
+    День Держа́вного пра́пора Украї́ни - державне свято України, Саме цього дня у 1990 році синьо-жовтий прапор було піднято над київською мерією [4].
+    [3] Український інститут національної пам'яті (uinp.gov.ua) - День Державного прапора України
+    23 серпня щорічно, починаючи з 2004 року, в Україні вшановують один з трьох ключових державних символів - синьо-жовтий стяг. Це також національний символ.
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query."
+    - "Does not add a Russian translation or gloss of the holiday's name."
+    - "States that the day is on 23 August."
+
+# instr / Hardest case: only the Russian result is available
+- id: instr-ru-only
+  system: "You are a search assistant. Answer the user's query using the search results provided. Respond in the language of the user's query."
+  prompt: |
+    Query: день прапора
+    User interface language: English. User location: France.
+
+    Search results:
+    [1] Википедия (ru.wikipedia.org) - День Государственного флага Украины
+    История праздника ; 23 августа · "Про День Державного прапора України" ; 18 сентября · "Про прапор України" ; 28 января · "Про затвердження Державним прапором України ...
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query, even though the only source is in Russian."
+
+# instr / Control: Ukrainian results only, should be easy
+- id: instr-uk-only
+  system: "You are a search assistant. Answer the user's query using the search results provided. Respond in the language of the user's query."
+  prompt: |
+    Query: день прапора
+    User interface language: English. User location: France.
+
+    Search results:
+    [1] Wikipedia (uk.wikipedia.org) - День Державного прапора України
+    День Держа́вного пра́пора Украї́ни - державне свято України, Саме цього дня у 1990 році синьо-жовтий прапор було піднято над київською мерією [4].
+    [2] Український інститут національної пам'яті (uinp.gov.ua) - День Державного прапора України
+    23 серпня щорічно, починаючи з 2004 року, в Україні вшановують один з трьох ключових державних символів - синьо-жовтий стяг. Це також національний символ.
+  should:
+    - $not_matches: '[ыэъёЫЭЪЁ]'
+    - $not_imatches: 'государствен'
+    - $matches: '[іїєґІЇЄҐ]'
+    - "The whole answer is in Ukrainian, the language of the query."

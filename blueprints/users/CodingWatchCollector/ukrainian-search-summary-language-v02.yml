@@ -1,3 +1,4 @@
+id: ukrainian-search-summary-language
 title: "Ukrainian search-summary language (v0.2)"
 description: |
   Simulates a search assistant (like Google AI Overview) summarising real search results
@@ -8,6 +9,7 @@ description: |
   Search results copied from a real Google results page (Nov 2026).
 author: "Anton Begunenko"
 tags: ["ukrainian", "language", "search", "rag"]
+models: [CORE]
 system: "You are a search assistant. Answer the user's query using the search results provided."
 ---
 

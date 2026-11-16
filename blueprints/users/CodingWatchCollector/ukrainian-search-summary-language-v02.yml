@@ -8,9 +8,6 @@ description: |
   Search results copied from a real Google results page (Nov 2026).
 author: "Anton Begunenko"
 tags: ["ukrainian", "language", "search", "rag"]
-models:
-  - openrouter:openai/gpt-4.1-mini
-  - openrouter:google/gemini-2.5-flash
 system: "You are a search assistant. Answer the user's query using the search results provided."
 ---
 
